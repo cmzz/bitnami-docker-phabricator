@@ -56,5 +56,6 @@ ENV APACHE_ENABLE_CUSTOM_PORTS="no" \
 
 EXPOSE 80 443
 
+RUN /opt/bitnami/phabricator/bin/config set phabricator.base-uri http://work.cmzz.net
 ENTRYPOINT [ "/app-entrypoint.sh" ]
 CMD [ "/run.sh" ]
