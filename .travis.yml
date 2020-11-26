@@ -1,0 +1,84 @@
+language: bash
+group: stable
+dist: trusty
+
+os: linux
+services:
+  - docker
+stages:
+  - name: 'Test, Build and Deploy'
+    if: branch =~ ^master$|^development$|^release
+  - name: 'Tag builder'
+    if: tag =~ '^v'
+
+jobs:
+  fast_finish: true
+  include:
+    - stage: 'Test, Build and Deploy'
+      name: 'Lint, Unit Test, Build and Deploy'
+      if: branch =~ ^master$|^development$|^release
+      before_install: |-
+        if [ "master" == "${TRAVIS_BRANCH}" ]; then
+          for env_value in $(compgen -v |grep '.*_PROD$'); do
+            eval export ${env_value%_PROD}="${!env_value}"
+          done
+        else
+          for env_value in $(compgen -v |grep '.*_STG$'); do
+            eval export ${env_value%_STG}="${!env_value}"
+          done
+        fi
+      install: echo skip
+      script: |-
+        set -e
+        export PROJECT_NAME="phabricator"
+
+        export API_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-api:latest"
+        export CRON_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-cron:latest"
+
+        cd 2020/debian-10
+        docker build -f ./Dockerfile \
+          -t $API_IMAGE \
+          .
+        
+      deploy:
+        ## upload to ecr
+        - provider: script
+          script: >-
+            docker login --username=$ALIYUN_DOCKER_USERNAME -p=${ALIYUN_DOCKER_PWD} ${ALIYUN_DOCKER_REGISTORY_URL}
+            && docker push "$API_IMAGE"
+            && docker push "$CRON_IMAGE"
+          skip_cleanup: true
+          on:
+            all_branches: true
+
+    - stage: 'Tag builder'
+      name: 'Tag builder'
+      before_install: |-
+        if [ ! -z "${TRAVIS_TAG}" ]; then
+          for env_value in $(compgen -v |grep '.*_PROD$'); do
+            eval export ${env_value%_PROD}="${!env_value}"
+          done
+        fi
+      install: echo skip
+      script: |-
+        set -e
+        export PROJECT_NAME="phabricator"
+        
+        export API_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-api:$TRAVIS_TAG"
+        export CRON_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-cron:$TRAVIS_TAG"
+
+        cd 2020/debian-10
+        docker build -f ./Dockerfile \
+          -t $API_IMAGE \
+          .
+
+      deploy:
+        ## upload to ecr
+        - provider: script
+          script: >-
+            docker login --username=$ALIYUN_DOCKER_USERNAME -p=${ALIYUN_DOCKER_PWD} ${ALIYUN_DOCKER_REGISTORY_URL}
+            && docker push "$API_IMAGE"
+            && docker push "$CRON_IMAGE"
+          skip_cleanup: true
+          on:
+            all_branches: true
