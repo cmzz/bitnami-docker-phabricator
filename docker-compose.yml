@@ -6,18 +6,13 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
       - MARIADB_EXTRA_FLAGS=--local-infile=0
     volumes:
-      - 'mariadb_data:/bitnami'
+      - '/mnt/data/.phabricator-data:/bitnami'
   phabricator:
-    image: 'docker.io/bitnami/phabricator:2020-debian-10'
+    image: 'registry.cn-hongkong.aliyuncs.com/cmzz_prod/phabricator:latest'
     ports:
-      - '80:80'
-      - '443:443'
+      - '8070:80'
+      - '8443:443'
     volumes:
-      - 'phabricator_data:/bitnami'
+      - '/mnt/data/.phabricator-data:/bitnami'
     depends_on:
       - mariadb
-volumes:
-  mariadb_data:
-    driver: local
-  phabricator_data:
-    driver: local
