@@ -32,12 +32,11 @@ jobs:
         set -e
         export PROJECT_NAME="phabricator"
 
-        export API_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-api:latest"
-        export CRON_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-cron:latest"
+        export IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}:latest"
 
         cd 2020/debian-10
         docker build -f ./Dockerfile \
-          -t $API_IMAGE \
+          -t $IMAGE \
           .
         
       deploy:
@@ -45,8 +44,7 @@ jobs:
         - provider: script
           script: >-
             docker login --username=$ALIYUN_DOCKER_USERNAME -p=${ALIYUN_DOCKER_PWD} ${ALIYUN_DOCKER_REGISTORY_URL}
-            && docker push "$API_IMAGE"
-            && docker push "$CRON_IMAGE"
+            && docker push "$IMAGE"
           skip_cleanup: true
           on:
             all_branches: true
@@ -63,13 +61,12 @@ jobs:
       script: |-
         set -e
         export PROJECT_NAME="phabricator"
-        
-        export API_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-api:$TRAVIS_TAG"
-        export CRON_IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}-cron:$TRAVIS_TAG"
+
+        export IMAGE="${ALIYUN_DOCKER_REGISTORY_URL}/${ALIYUN_REPO_NAMESPAC}/${PROJECT_NAME}:$TRAVIS_TAG"
 
         cd 2020/debian-10
         docker build -f ./Dockerfile \
-          -t $API_IMAGE \
+          -t $IMAGE \
           .
 
       deploy:
@@ -77,8 +74,7 @@ jobs:
         - provider: script
           script: >-
             docker login --username=$ALIYUN_DOCKER_USERNAME -p=${ALIYUN_DOCKER_PWD} ${ALIYUN_DOCKER_REGISTORY_URL}
-            && docker push "$API_IMAGE"
-            && docker push "$CRON_IMAGE"
+            && docker push "$IMAGE"
           skip_cleanup: true
           on:
             all_branches: true
